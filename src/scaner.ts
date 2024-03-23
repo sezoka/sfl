@@ -29,7 +29,8 @@ export type TokenKind =
   | "left_paren"
   | "right_paren"
   | "let"
-  | "semicolon";
+  | "semicolon"
+  | "string"
 
 export type TokenOp = string | number | undefined;
 
@@ -187,6 +188,18 @@ function next_token(s: Scaner): Token | null {
     return create_token(s, "ident", lexeme);
   }
 
+  if (c === '"') {
+    while (peek(s) !== '"' && !is_at_end(s)) {
+      advance(s);
+    }
+    if (is_at_end(s)) {
+      console.error("unenclosed string");
+    }
+    advance(s);
+    const lex = get_lexeme(s);
+    return create_token(s, "string", lex.slice(1, lex.length - 1));
+  }
+
   switch (c) {
     case "=":
       return match(s, "=")
@@ -236,4 +249,4 @@ function next_token(s: Scaner): Token | null {
   throw new ScanerError();
 }
 
-class ScanerError extends Error {}
+class ScanerError extends Error { }

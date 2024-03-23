@@ -23,9 +23,24 @@
 // 
 // }
 
-if true do 2 + 2 else 2 - 2
-if true do 2 + 2
+if true do 2 + 2 else 2 - 2;
+if true do 2 + 2;
+
+if 2 + 2 == 4 {
+  true;
+} else {
+  false;
+}
 
 let x = 123;
 
 x;
+
+x = 321;
+
+let asdf = "asdf";
+
+asdf;
+
+// let arr = [1, 2, 3, 4, 5, 6];
+

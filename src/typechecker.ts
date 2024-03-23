@@ -17,6 +17,7 @@ type Checker = {
 
 type ValueType =
   | { kind: "int" }
+  | { kind: "string" }
   | { kind: "float" }
   | { kind: "bool" }
   | { kind: "void" };
@@ -122,7 +123,14 @@ function check_node(c: Checker, node: Node): ValueType {
     case "ident":
       const ident = node.val;
       return get_var(c, ident).type_;
-
+    case "assign":
+      const assign = node.val;
+      const val_type = check_node(c, assign.val);
+      const var_ = get_var(c, assign.name);
+      if (var_.type_.kind !== val_type.kind) {
+        error(`can not assign value of type '${val_type.kind}' to variable of type '${var_.type_.kind}'`);
+      }
+      return { kind: "void" };
   }
 }
 

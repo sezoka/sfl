@@ -13,7 +13,13 @@ type NodeBase =
   | { kind: "if"; val: IfExprStmt }
   | { kind: "ident"; val: IdentExpr }
   | { kind: "let"; val: LetExpr }
+  | { kind: "assign"; val: AssignExpr }
   | { kind: "block"; val: BlockStmt };
+
+type AssignExpr = {
+  name: string;
+  val: Node;
+};
 
 type LetExpr = {
   init_expr: Node;
@@ -40,6 +46,7 @@ export type GroupingExpr = {
 };
 
 export type LiteralExp =
+  { kind: "string"; val: string }
   | { kind: "int"; val: number }
   | { kind: "float"; val: number }
   | { kind: "bool"; val: boolean };
@@ -77,12 +84,16 @@ function next(p: Parser): Token {
   return tok;
 }
 
-function peek(p: Parser) {
+function peek(p: Parser): Token {
   const tok = p.tokens[p.pos];
   if (!tok) {
     error(p, "unexpected end of file");
   }
   return tok;
+}
+
+function peek_next(p: Parser): Token | null {
+  return p.tokens[p.pos + 1] || null;
 }
 
 function peek_prev(p: Parser) {
@@ -137,12 +148,18 @@ function parse_statement(p: Parser): Node {
       is_expr = true;
     }
     const then = is_expr ? parse_expression(p) : parse_statement(p);
+
+    const need_semicolon = is_expr;
     let else_: Node | null = null;
     if (!is_at_end(p) && peek(p).kind === "else") {
       next(p);
       else_ = is_expr ? parse_expression(p) : parse_statement(p);
     } else {
       is_expr = false;
+    }
+
+    if (need_semicolon) {
+      expect(p, "semicolon");
     }
 
     const if_node = create_node(p, {
@@ -159,12 +176,20 @@ function parse_statement(p: Parser): Node {
   if (peek(p).kind === "let") {
     next(p);
     const ident = expect(p, "ident");
-    console.log(">>>", ident)
     const name = ident?.val as string || "";
     expect(p, "equal");
     const init_expr = parse_expression(p);
     expect(p, "semicolon");
     return create_node(p, { kind: "let", val: { init_expr, name } });
+  }
+
+  if (peek(p).kind === "ident" && peek_next(p)?.kind === "equal") {
+    const ident = next(p);
+    next(p);
+    const val = parse_expression(p);
+    console.log("HERE", val)
+    expect(p, "semicolon");
+    return create_node(p, { kind: "assign", val: { val, name: ident.val as string } });
   }
 
   const expr = parse_expression(p);
@@ -330,6 +355,8 @@ function parse_primary(p: Parser): Node {
       });
     case "ident":
       return create_node(p, { kind: "ident", val: tok.val as string })
+    case "string":
+      return create_node(p, { kind: "literal", val: { kind: "string", val: tok.val as string } });
   }
 
   error(p, "unexpected token '" + tok.kind + "'");
@@ -356,7 +383,7 @@ function error(p: Parser, ...something: any): never {
   } else {
     console.error(`[${peek(p).line}]:`, ...something);
   }
-  throw ParseError;
+  throw new ParseError();
 }
 
 class ParseError extends Error { }

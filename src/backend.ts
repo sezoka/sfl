@@ -1,5 +1,4 @@
 import type { Node } from "./parser";
-import { todo } from "./util";
 
 type Backend = {
   buff: string[];
@@ -22,14 +21,14 @@ function generate_node(b: Backend, node: Node) {
     case "literal":
       switch (node.val.kind) {
         case "int":
-          b.buff.push(node.val.val.toString());
-          break;
         case "float":
-          b.buff.push(node.val.val.toString());
-          break;
         case "bool":
           b.buff.push(node.val.val.toString());
           break;
+        case "string":
+          b.buff.push('"');
+          b.buff.push(node.val.val.toString());
+          b.buff.push('"');
       }
       break;
     case "binary":
@@ -120,6 +119,13 @@ function generate_node(b: Backend, node: Node) {
       append(b, let_.name);
       append(b, " = ");
       generate_node(b, let_.init_expr);
+      append(b, ";");
+      break;
+    case "assign":
+      const assign = node.val;
+      append(b, assign.name);
+      append(b, " = ");
+      generate_node(b, assign.val);
       append(b, ";");
       break;
     default:
