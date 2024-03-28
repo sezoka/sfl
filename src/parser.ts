@@ -303,12 +303,12 @@ function parse_plus(p: Parser): Node {
 }
 
 function parse_mult(p: Parser): Node {
-  let left = parse_primary(p);
+  let left = parse_if_expr(p);
 
   while (!is_at_end(p) && ["multiply", "divide"].includes(peek(p).kind)) {
     const op = next(p).kind;
     if (op !== "multiply" && op !== "divide") unreachable();
-    const right = parse_primary(p);
+    const right = parse_if_expr(p);
     left = create_node(p, {
       kind: "binary",
       val: {
@@ -320,6 +320,26 @@ function parse_mult(p: Parser): Node {
   }
 
   return left;
+}
+
+function parse_if_expr(p: Parser) {
+  if (peek(p).kind === "if") {
+    next(p);
+    const cond = parse_expression(p);
+
+    expect(p, "do");
+    const then = parse_expression(p);
+    expect(p, "else");
+    const else_: Node = parse_expression(p);
+
+    const if_node = create_node(p, {
+      kind: "if",
+      val: { cond, then, else_, is_expr: true },
+    });
+    return if_node;
+  }
+
+  return parse_primary(p);
 }
 
 function parse_primary(p: Parser): Node {
@@ -357,6 +377,19 @@ function parse_primary(p: Parser): Node {
       return create_node(p, { kind: "ident", val: tok.val as string })
     case "string":
       return create_node(p, { kind: "literal", val: { kind: "string", val: tok.val as string } });
+    case "left_bracket":
+      const items: Node[] = [];
+      while (!is_at_end(p) && peek(p).kind !== 'right_bracket') {
+        items.push(parse_expression(p));
+        if (!is_at_end(p) && peek(p).kind === "comma") {
+          next(p);
+        }
+        if (!is_at_end(p) && peek(p).kind !== "right_bracket") {
+          error(p, "expect ','");
+        }
+      }
+      expect(p, "right_bracket");
+      return create_node(p, {kind: "array"});
   }
 
   error(p, "unexpected token '" + tok.kind + "'");

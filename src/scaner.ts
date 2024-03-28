@@ -28,7 +28,10 @@ export type TokenKind =
   | "right_brace"
   | "left_paren"
   | "right_paren"
+  | "left_bracket"
+  | "right_bracket"
   | "let"
+  | "comma"
   | "semicolon"
   | "string"
 
@@ -215,6 +218,8 @@ function next_token(s: Scaner): Token | null {
       return create_token(s, "plus");
     case "-":
       return create_token(s, "minus");
+    case ",":
+      return create_token(s, "comma");
     case "*":
       return create_token(s, "multiply");
     case "/":
@@ -225,6 +230,10 @@ function next_token(s: Scaner): Token | null {
       return create_token(s, "left_paren");
     case ")":
       return create_token(s, "right_paren");
+    case "[":
+      return create_token(s, "left_bracket");
+    case "]":
+      return create_token(s, "right_bracket");
     case "{":
       return create_token(s, "left_brace");
     case "}":
